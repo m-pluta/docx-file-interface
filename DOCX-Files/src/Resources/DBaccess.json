@@ -1,0 +1,6 @@
+{
+"url":"jdbc:mysql://freedb.tech:3306/freedbtech_dbMikey",
+"username":"freedbtech_ThunderCandy",
+"password":"",
+"TableName":"tblItems"
+}
