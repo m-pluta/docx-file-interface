@@ -1,3 +1,5 @@
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -7,14 +9,20 @@ import java.util.ArrayList;
 
 public class WordDocument {
 
+	static String workingDir = "";
+
 	public static void main(String[] args) {
 
 		ArrayList<sqlRow> data = extractSQL("jdbc:mysql://freedb.tech:3306/freedbtech_dbMikey",
 				"freedbtech_ThunderCandy", "password", "tblPizza");
 
-		for (sqlRow node : data) { // Debug
-			System.out.format("%s, %s, %s, %s \n", node.get(0), node.get(1), node.get(2), node.get(3));
-		}
+//		for (sqlRow node : data) { // Debug
+//			System.out.format("%s, %s, %s, %s \n", node.get(0), node.get(1), node.get(2), node.get(3));
+//		}
+
+		workingDir = getCurrentDir();
+
+		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
 
 	}
 
@@ -43,11 +51,16 @@ public class WordDocument {
 
 		} catch (SQLException e) {
 			System.out.println("SQLException: " + e.toString());
-		} catch (ClassNotFoundException cE) {
-			System.out.println("Class not found exception: " + cE.toString());
+		} catch (ClassNotFoundException e) {
+			System.out.println("Class not found exception: " + e.toString());
 		}
 
 		return tempArr;
+	}
+
+	public static String getCurrentDir() {
+		Path currentRelativePath = Paths.get("");
+		return currentRelativePath.toAbsolutePath().toString();
 	}
 
 }
