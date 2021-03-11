@@ -1,6 +1,6 @@
 /bin/
-/OutputDocuments/
-/Resources/
-..project
-..classpath
+/src/OutputDocuments/
+/src/Resources/
+/.project/
+/.classpath/
 /.settings/
