@@ -203,6 +203,9 @@ public class WordDocument {
 
 		try {
 			document.write(new FileOutputStream(savingDestination));
+			if (savingDestination.equals(workingDir + "\\src\\Resources\\Temporary.docx")) {
+				setHiddenAttribute(new File(workingDir + "\\src\\Resources\\Temporary.docx"));
+			}
 
 		} catch (IOException e) {
 			System.out.println("Error saving file");
@@ -214,6 +217,20 @@ public class WordDocument {
 	public static String getCurrentDir() {
 		Path currentRelativePath = Paths.get("");
 		return currentRelativePath.toAbsolutePath().toString();
+	}
+
+	private static void setHiddenAttribute(File file) {
+		try {
+			Process p = Runtime.getRuntime().exec("attrib +H " + file.getPath());
+			p.waitFor();
+			if (file.isHidden()) {
+				System.out.println(file.getName() + " hidden attribute is set to true");
+			} else {
+				System.out.println(file.getName() + " hidden attribute not set to true");
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
