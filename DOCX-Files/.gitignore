@@ -1,6 +1,6 @@
 /bin/
 /src/OutputDocuments/
-/src/Resources/
-/.project/
-/.classpath/
-/.settings/
+/src/Resources/Template.docx
+/*.project
+/.classpath
+/.settings
