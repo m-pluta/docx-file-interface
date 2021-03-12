@@ -30,15 +30,17 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 public class WordDocument {
 
 	static String workingDir = "";
+	static String tempFile_filepath = "";
 
 	public static void main(String[] args)
 			throws InvalidFormatException, IOException, XmlException, InterruptedException {
 
 		workingDir = getCurrentDir();
+		tempFile_filepath = "\\src\\Resources\\Temporary.docx";
 
 		ArrayList<sqlRow> data = extractSQL();
-
 		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
+
 		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\Output.docx", data);
 
 	}
@@ -105,14 +107,21 @@ public class WordDocument {
 
 		XWPFDocument doc = new XWPFDocument(OPCPackage.open(source));
 		doc = resizeDocumentTable(doc, data.size());
+		saveDocument(doc, workingDir + tempFile_filepath);
 
-		saveDocument(doc, workingDir + "\\src\\Resources\\Temporary.docx");
-
-		XWPFDocument doc2 = new XWPFDocument(OPCPackage.open(workingDir + "\\src\\Resources\\Temporary.docx"));
+		XWPFDocument doc2 = new XWPFDocument(OPCPackage.open(workingDir + tempFile_filepath));
 
 		doc2 = insertIntoTable(doc2, data);
 		String finalDestination = saveDocument(doc2, destination);
-		System.out.println("Finished");
+
+		File temp = new File(workingDir + tempFile_filepath);
+//		setHiddenAttribute(temp, false);
+		if (temp.delete()) {
+			System.out.println("Temporary file deleted successfully");
+		} else {
+			System.out.println("Failed to delete file");
+		}
+
 		System.out.println("Saved document under: " + finalDestination);
 
 	}
@@ -145,7 +154,6 @@ public class WordDocument {
 		XWPFTable table = tables.get(0);
 
 		XWPFTableRow blankRow = table.getRows().get(2);
-
 		if (amtRows == 0) {
 			table.removeRow(2);
 			table.removeRow(1);
@@ -180,7 +188,7 @@ public class WordDocument {
 
 		String savingDestination = destination;
 
-		if (!savingDestination.equals(workingDir + "\\src\\Resources\\Temporary.docx")) {
+		if (!savingDestination.equals(workingDir + tempFile_filepath)) {
 			File f = new File(savingDestination);
 			if (f.exists() && !f.isDirectory()) {
 				System.out.println("File already exists under " + f.toPath().toString());
@@ -194,18 +202,15 @@ public class WordDocument {
 						counter++;
 					} else {
 						savingDestination = workingDir + "\\src\\OutputDocuments\\Output" + counter + ".docx";
-						Thread.sleep(1000); // #TODO
 						found = true;
 					}
 				}
 			}
+
 		}
 
 		try {
 			document.write(new FileOutputStream(savingDestination));
-			if (savingDestination.equals(workingDir + "\\src\\Resources\\Temporary.docx")) {
-				setHiddenAttribute(new File(workingDir + "\\src\\Resources\\Temporary.docx"));
-			}
 
 		} catch (IOException e) {
 			System.out.println("Error saving file");
@@ -217,20 +222,6 @@ public class WordDocument {
 	public static String getCurrentDir() {
 		Path currentRelativePath = Paths.get("");
 		return currentRelativePath.toAbsolutePath().toString();
-	}
-
-	private static void setHiddenAttribute(File file) {
-		try {
-			Process p = Runtime.getRuntime().exec("attrib +H " + file.getPath());
-			p.waitFor();
-			if (file.isHidden()) {
-				System.out.println(file.getName() + " hidden attribute is set to true");
-			} else {
-				System.out.println(file.getName() + " hidden attribute not set to true");
-			}
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 }
