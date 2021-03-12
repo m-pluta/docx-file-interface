@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -30,14 +31,15 @@ public class WordDocument {
 
 	static String workingDir = "";
 
-	public static void main(String[] args) throws InvalidFormatException, IOException, XmlException {
+	public static void main(String[] args)
+			throws InvalidFormatException, IOException, XmlException, InterruptedException {
 
 		workingDir = getCurrentDir();
 
 		ArrayList<sqlRow> data = extractSQL();
 
 		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
-		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\out2.docx", data);
+		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\out3.docx", data);
 
 	}
 
@@ -104,7 +106,7 @@ public class WordDocument {
 	}
 
 	public static void generateDocument(String source, String destination, ArrayList<sqlRow> data)
-			throws InvalidFormatException, IOException, XmlException {
+			throws InvalidFormatException, IOException, XmlException, InterruptedException {
 
 		XWPFDocument doc = new XWPFDocument(OPCPackage.open(source));
 		doc = resizeDocumentTable(doc, data.size());
@@ -152,9 +154,31 @@ public class WordDocument {
 		return document;
 	}
 
-	public static void saveDocument(XWPFDocument document, String destination) {
+	public static void saveDocument(XWPFDocument document, String destination) throws InterruptedException {
+
+		String savingDestination = destination;
+
+		File f = new File(savingDestination);
+		if (f.exists() && !f.isDirectory()) {
+			System.out.println("File already exists");
+
+			boolean found = false;
+			int counter = 1;
+			while (!found) {
+				File t = new File(workingDir + "\\src\\OutputDocuments\\out" + counter + ".docx");
+
+				if (t.exists() && !t.isDirectory()) {
+					counter++;
+				} else {
+					savingDestination = workingDir + "\\src\\OutputDocuments\\out" + counter + ".docx";
+					Thread.sleep(1000);
+					found = true;
+				}
+			}
+		}
+
 		try {
-			document.write(new FileOutputStream(destination));
+			document.write(new FileOutputStream(savingDestination));
 		} catch (IOException e) {
 			System.out.println("Error saving file");
 			e.printStackTrace();
