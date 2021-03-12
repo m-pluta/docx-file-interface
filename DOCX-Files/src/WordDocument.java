@@ -36,13 +36,13 @@ public class WordDocument {
 			throws InvalidFormatException, IOException, XmlException, InterruptedException {
 
 		workingDir = getCurrentDir();
-		tempFile_filepath = "\\src\\Resources\\Temporary.docx";
+		tempFile_filepath = workingDir + "\\src\\Resources\\Temporary.docx";
 
 		ArrayList<sqlRow> data = extractSQL();
+
 		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
-
-		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\Output.docx", data);
-
+		String outputPath = workingDir + "\\src\\OutputDocuments\\Output.docx";
+		generateDocument(templatePath, outputPath, data);
 	}
 
 	public static ArrayList<sqlRow> extractSQL() {
@@ -99,23 +99,21 @@ public class WordDocument {
 		}
 
 		return tempArray;
-
+		
 	}
 
 	public static void generateDocument(String source, String destination, ArrayList<sqlRow> data)
-			throws InvalidFormatException, IOException, XmlException, InterruptedException {
+			throws InvalidFormatException, IOException, XmlException {
 
 		XWPFDocument doc = new XWPFDocument(OPCPackage.open(source));
 		doc = resizeDocumentTable(doc, data.size());
-		saveDocument(doc, workingDir + tempFile_filepath);
+		saveDocument(doc, tempFile_filepath);
 
-		XWPFDocument doc2 = new XWPFDocument(OPCPackage.open(workingDir + tempFile_filepath));
-
+		XWPFDocument doc2 = new XWPFDocument(OPCPackage.open(tempFile_filepath));
 		doc2 = insertIntoTable(doc2, data);
 		String finalDestination = saveDocument(doc2, destination);
 
-		File temp = new File(workingDir + tempFile_filepath);
-//		setHiddenAttribute(temp, false);
+		File temp = new File(tempFile_filepath);
 		if (temp.delete()) {
 			System.out.println("Temporary file deleted successfully");
 		} else {
@@ -184,11 +182,11 @@ public class WordDocument {
 		return document;
 	}
 
-	public static String saveDocument(XWPFDocument document, String destination) throws InterruptedException {
+	public static String saveDocument(XWPFDocument document, String destination) throws IOException {
 
 		String savingDestination = destination;
 
-		if (!savingDestination.equals(workingDir + tempFile_filepath)) {
+		if (!savingDestination.equals(tempFile_filepath)) {
 			File f = new File(savingDestination);
 			if (f.exists() && !f.isDirectory()) {
 				System.out.println("File already exists under " + f.toPath().toString());
@@ -209,12 +207,17 @@ public class WordDocument {
 
 		}
 
+		FileOutputStream out = null;
 		try {
-			document.write(new FileOutputStream(savingDestination));
+			out = new FileOutputStream(savingDestination);
+			document.write(out);
+			out.close();
 
 		} catch (IOException e) {
 			System.out.println("Error saving file");
 			e.printStackTrace();
+		} finally {
+			out.close();
 		}
 		return savingDestination;
 	}
