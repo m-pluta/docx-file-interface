@@ -1,4 +1,6 @@
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,6 +21,9 @@ import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlException;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 
 public class WordDocument {
@@ -27,30 +32,51 @@ public class WordDocument {
 
 	public static void main(String[] args) throws InvalidFormatException, IOException, XmlException {
 
-		ArrayList<sqlRow> data = extractSQL("jdbc:mysql://freedb.tech:3306/freedbtech_dbMikey",
-				"freedbtech_ThunderCandy", "password", "tblPizza");
-
-//		for (sqlRow node : data) { // Debug
-//			System.out.format("%s, %s, %s, %s \n", node.get(0), node.get(1), node.get(2), node.get(3));
-//		}
-
 		workingDir = getCurrentDir();
-		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
 
+		ArrayList<sqlRow> data = extractSQL();
+
+		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
 		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\out2.docx", data);
 
 	}
 
-	public static ArrayList<sqlRow> extractSQL(String url, String username, String password, String tableName) {
+	public static ArrayList<String> getAuthData(String source) {
 
+		ArrayList<String> tempArray = new ArrayList<String>();
+		JSONParser parser = new JSONParser();
+
+		try {
+
+			JSONObject obj = (JSONObject) parser.parse(new FileReader(source));
+			tempArray.add((String) obj.get("url"));
+			tempArray.add((String) obj.get("username"));
+			tempArray.add((String) obj.get("password"));
+			tempArray.add((String) obj.get("tableName"));
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+
+		return tempArray;
+
+	}
+
+	public static ArrayList<sqlRow> extractSQL() {
+
+		ArrayList<String> authData = getAuthData(workingDir + "\\src\\authDB.json");
 		ArrayList<sqlRow> tempArr = new ArrayList<sqlRow>();
 
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection conn = DriverManager.getConnection(url, username, password);
+			Connection conn = DriverManager.getConnection(authData.get(0), authData.get(1), authData.get(2));
 			System.out.println("Connected to database");
 
-			String SQL = "SELECT * FROM " + tableName;
+			String SQL = "SELECT * FROM " + authData.get(3);
 			Statement statement;
 			ResultSet result;
 
