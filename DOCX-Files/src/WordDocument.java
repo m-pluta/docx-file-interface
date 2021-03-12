@@ -39,32 +39,7 @@ public class WordDocument {
 		ArrayList<sqlRow> data = extractSQL();
 
 		String templatePath = workingDir + "\\src\\Resources\\Template.docx";
-		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\out3.docx", data);
-
-	}
-
-	public static ArrayList<String> getAuthData(String source) {
-
-		ArrayList<String> tempArray = new ArrayList<String>();
-		JSONParser parser = new JSONParser();
-
-		try {
-
-			JSONObject obj = (JSONObject) parser.parse(new FileReader(source));
-			tempArray.add((String) obj.get("url"));
-			tempArray.add((String) obj.get("username"));
-			tempArray.add((String) obj.get("password"));
-			tempArray.add((String) obj.get("tableName"));
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
-
-		return tempArray;
+		generateDocument(templatePath, workingDir + "\\src\\OutputDocuments\\Output.docx", data);
 
 	}
 
@@ -100,9 +75,29 @@ public class WordDocument {
 		return tempArr;
 	}
 
-	public static String getCurrentDir() {
-		Path currentRelativePath = Paths.get("");
-		return currentRelativePath.toAbsolutePath().toString();
+	static ArrayList<String> getAuthData(String source) {
+
+		ArrayList<String> tempArray = new ArrayList<String>();
+		JSONParser parser = new JSONParser();
+
+		try {
+
+			JSONObject obj = (JSONObject) parser.parse(new FileReader(source));
+			tempArray.add((String) obj.get("url"));
+			tempArray.add((String) obj.get("username"));
+			tempArray.add((String) obj.get("password"));
+			tempArray.add((String) obj.get("tableName"));
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+
+		return tempArray;
+
 	}
 
 	public static void generateDocument(String source, String destination, ArrayList<sqlRow> data)
@@ -111,8 +106,36 @@ public class WordDocument {
 		XWPFDocument doc = new XWPFDocument(OPCPackage.open(source));
 		doc = resizeDocumentTable(doc, data.size());
 
-		saveDocument(doc, destination);
+		saveDocument(doc, workingDir + "\\src\\Resources\\Temporary.docx");
 
+		XWPFDocument doc2 = new XWPFDocument(OPCPackage.open(workingDir + "\\src\\Resources\\Temporary.docx"));
+
+		doc2 = insertIntoTable(doc2, data);
+		String finalDestination = saveDocument(doc2, destination);
+		System.out.println("Finished");
+		System.out.println("Saved document under: " + finalDestination);
+
+	}
+
+	public static XWPFDocument insertIntoTable(XWPFDocument document, ArrayList<sqlRow> data) {
+
+		List<XWPFTable> tables = document.getTables();
+
+		XWPFTable table = tables.get(0);
+
+		for (int i = 1; i < data.size() + 1; i++) {
+			int j = 0;
+			for (XWPFTableCell cell : table.getRows().get(i).getTableCells()) {
+				for (XWPFParagraph p : cell.getParagraphs()) {
+					for (XWPFRun r : p.getRuns()) {
+						r.setText(data.get(i - 1).data[j++]);
+					}
+				}
+			}
+			j = 0;
+		}
+
+		return document;
 	}
 
 	public static XWPFDocument resizeDocumentTable(XWPFDocument document, int amtRows)
@@ -137,11 +160,10 @@ public class WordDocument {
 				CTRow ctrow = CTRow.Factory.parse(blankRow.getCtRow().newInputStream());
 				XWPFTableRow newRow = new XWPFTableRow(ctrow, table);
 
-				int cellIndex = 0;
 				for (XWPFTableCell cell : newRow.getTableCells()) {
 					for (XWPFParagraph paragraph : cell.getParagraphs()) {
 						for (XWPFRun run : paragraph.getRuns()) {
-							run.setText("$e", 0);
+							run.setText("", 0);
 						}
 					}
 				}
@@ -154,35 +176,44 @@ public class WordDocument {
 		return document;
 	}
 
-	public static void saveDocument(XWPFDocument document, String destination) throws InterruptedException {
+	public static String saveDocument(XWPFDocument document, String destination) throws InterruptedException {
 
 		String savingDestination = destination;
 
-		File f = new File(savingDestination);
-		if (f.exists() && !f.isDirectory()) {
-			System.out.println("File already exists");
+		if (!savingDestination.equals(workingDir + "\\src\\Resources\\Temporary.docx")) {
+			File f = new File(savingDestination);
+			if (f.exists() && !f.isDirectory()) {
+				System.out.println("File already exists");
 
-			boolean found = false;
-			int counter = 1;
-			while (!found) {
-				File t = new File(workingDir + "\\src\\OutputDocuments\\out" + counter + ".docx");
+				boolean found = false;
+				int counter = 1;
+				while (!found) {
+					File t = new File(workingDir + "\\src\\OutputDocuments\\Output" + counter + ".docx");
 
-				if (t.exists() && !t.isDirectory()) {
-					counter++;
-				} else {
-					savingDestination = workingDir + "\\src\\OutputDocuments\\out" + counter + ".docx";
-					Thread.sleep(1000);
-					found = true;
+					if (t.exists() && !t.isDirectory()) {
+						counter++;
+					} else {
+						savingDestination = workingDir + "\\src\\OutputDocuments\\out" + counter + ".docx";
+						Thread.sleep(1000); // #TODO
+						found = true;
+					}
 				}
 			}
 		}
 
 		try {
 			document.write(new FileOutputStream(savingDestination));
+
 		} catch (IOException e) {
 			System.out.println("Error saving file");
 			e.printStackTrace();
 		}
+		return savingDestination;
+	}
+
+	public static String getCurrentDir() {
+		Path currentRelativePath = Paths.get("");
+		return currentRelativePath.toAbsolutePath().toString();
 	}
 
 }
