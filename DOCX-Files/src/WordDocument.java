@@ -183,7 +183,7 @@ public class WordDocument {
 		if (!savingDestination.equals(workingDir + "\\src\\Resources\\Temporary.docx")) {
 			File f = new File(savingDestination);
 			if (f.exists() && !f.isDirectory()) {
-				System.out.println("File already exists");
+				System.out.println("File already exists under " + f.toPath().toString());
 
 				boolean found = false;
 				int counter = 1;
@@ -193,7 +193,7 @@ public class WordDocument {
 					if (t.exists() && !t.isDirectory()) {
 						counter++;
 					} else {
-						savingDestination = workingDir + "\\src\\OutputDocuments\\out" + counter + ".docx";
+						savingDestination = workingDir + "\\src\\OutputDocuments\\Output" + counter + ".docx";
 						Thread.sleep(1000); // #TODO
 						found = true;
 					}
