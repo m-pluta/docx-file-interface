@@ -1,12 +1,9 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,12 +19,11 @@ import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlException;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 
 public class WordDocument {
+
+	static Connection conn = null;
 
 	static String workingDir = "";
 	static String tempFile_filepath = "";
@@ -47,59 +43,34 @@ public class WordDocument {
 
 	public static ArrayList<sqlRow> extractSQL() {
 
-		ArrayList<String> authData = getAuthData(workingDir + "\\src\\authDB.json");
 		ArrayList<sqlRow> tempArr = new ArrayList<sqlRow>();
 
+		conn = sqlManager.openConnection();
+		System.out.println("Connected to database");
 		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection conn = DriverManager.getConnection(authData.get(0), authData.get(1), authData.get(2));
-			System.out.println("Connected to database");
 
-			String SQL = "SELECT * FROM " + authData.get(3);
-			Statement statement;
-			ResultSet result;
+			String SQL = "SELECT description, quantity, unit_price, unit_price * quantity as itemCost FROM tblInvoiceDetails WHERE invoice_id = 3";
+			Statement stmt = null;
+			ResultSet rs = null;
 
-			statement = conn.createStatement();
-			result = statement.executeQuery(SQL);
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(SQL);
 
-			while (result.next()) {
-				sqlRow tempRow = new sqlRow(result.getString("PizzaType"), result.getString("Toppings"),
-						result.getString("Cost"), result.getString("SpecialInfo"));
+			while (rs.next()) {
+				sqlRow tempRow = new sqlRow(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4));
 				tempArr.add(tempRow);
 			}
 
 		} catch (SQLException e) {
-			System.out.println("SQLException: " + e.toString());
-		} catch (ClassNotFoundException e) {
-			System.out.println("Class not found exception: " + e.toString());
+			System.out.println("SQLException");
+			e.printStackTrace();
 		}
 
+//		for (sqlRow row : tempArr) {
+//			System.out.println(row.toString());
+//
+//		}
 		return tempArr;
-	}
-
-	static ArrayList<String> getAuthData(String source) {
-
-		ArrayList<String> tempArray = new ArrayList<String>();
-		JSONParser parser = new JSONParser();
-
-		try {
-
-			JSONObject obj = (JSONObject) parser.parse(new FileReader(source));
-			tempArray.add((String) obj.get("url"));
-			tempArray.add((String) obj.get("username"));
-			tempArray.add((String) obj.get("password"));
-			tempArray.add((String) obj.get("tableName"));
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
-
-		return tempArray;
-		
 	}
 
 	public static void generateDocument(String source, String destination, ArrayList<sqlRow> data)

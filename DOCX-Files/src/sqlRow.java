@@ -14,6 +14,12 @@ public class sqlRow {
 
 	public String get(int index) {
 		return this.data[index];
+	}
+
+	@Override
+	public String toString() {
+		return this.get(0) + ", " + this.get(1) + ", " + this.get(2) + ", " + this.get(3);
 
 	}
+
 }
